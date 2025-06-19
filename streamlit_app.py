@@ -18,16 +18,20 @@ def simulate_random(init_capital, mu, sigma, years):
     return np.array(values)
 
 def simulate_behavioral(init_capital, mu, sigma, years, panic_drawdown):
-    values = simulate_random(init_capital, mu, sigma, years)
-    max_peak = values[0]
-    for i, v in enumerate(values):
-        if v > max_peak:
-            max_peak = v
-        drawdown = (v - max_peak) / max_peak
+    # Simula série volátil completa
+    volatile = simulate_random(init_capital, mu, sigma, years)
+    periods = years * 12
+    # Percorre a série mês a mês para checar drawdown
+    for i in range(1, len(volatile)):
+        peak = volatile[:i+1].max()
+        drawdown = (volatile[i] - peak) / peak
         if drawdown <= -panic_drawdown:
-            remaining = values[-1]
-            return simulate_constant(remaining, mu*0.5, years - i/12)
-    return values
+            # Quando dispara o pânico, transforma o restante em estratégia constante
+            remaining_months = periods - i
+            monthly_return = (1 + mu * 0.5) ** (1/12) - 1
+            cons = volatile[i] * (1 + monthly_return) ** np.arange(remaining_months + 1)
+            return np.concatenate([volatile[:i+1], cons[1:]])
+    return volatile
 
 # --- Interface Streamlit ---
 st.title("Portfolio Behavior Simulator")
