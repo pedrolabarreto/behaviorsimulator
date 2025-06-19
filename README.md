@@ -1,41 +1,32 @@
-# Portfolio Behavior Simulator with Behavioral Triggers
+# Behavior Gap App
 
-Este projeto demonstra, via simulação numérica e Monte Carlo, como decisões de realocação baseadas em performance (ganância) e drawdown (pânico) afetam a evolução do patrimônio ao longo de décadas.
+Pequeno aplicativo Streamlit para demonstrar, de forma interativa, o impacto dos vieses comportamentais
+(pânico, FOMO, excesso de confiança) na construção de patrimônio de longo prazo.
 
-## Como usar
+## Como rodar localmente
 
-1. Clone este repositório:
-   ```bash
-   git clone https://github.com/SEU_USUARIO/portfolio_behavior_simulator.git
-   cd portfolio_behavior_simulator
-   ```
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+streamlit run app.py
+```
 
-2. Instale as dependências:
-   ```bash
-   pip install -r requirements.txt
-   ```
+Ou simplesmente faça o deploy no **Streamlit Community Cloud** apontando para `app.py`.
 
-3. Execute a aplicação:
-   ```bash
-   streamlit run streamlit_app.py
-   ```
+## Estrutura
 
-4. Na sidebar, defina:
-   - **Capital Inicial**  
-   - **Horizonte (anos)**  
-   - **Retorno Constante (% a.a.)**  
-   - **Retorno Volátil (% a.a.)**  
-   - **Volatilidade Volátil (% a.a.)**  
-   - **Drawdown para Pânico (% mensais)**  
-   - **Threshold Ganância Up-Switch 1 (bps)**  
-   - **Threshold Ganância Up-Switch 2 (bps)**  
-   - **Simulações (Monte Carlo)**  
+```
+behaviorsimulator/
+├── app.py
+├── requirements.txt
+├── modules/
+│   ├── loaders.py
+│   ├── simulations.py
+│   └── visuals.py
+└── data/
+```
 
-5. A aplicação mostra:
-   - **Retorno Esperado** da parte constante e volátil  
-   - **Evolução Mediana** e **Faixa 10-90%** do portfólio  
-   - **Valor Final Mediano**, **Retorno Anualizado Mediano** e **Behavior Gap**  
+## Licença
 
-## Deploy
-
-Conecte ao Streamlit Cloud: https://share.streamlit.io  
+MIT
