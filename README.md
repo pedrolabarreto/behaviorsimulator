@@ -1,6 +1,6 @@
-# Portfolio Behavior Simulator with Behavioral Allocation
+# Portfolio Behavior Simulator with Behavioral Allocation and Behavior Gap
 
-Este projeto demonstra, via simulação numérica e Monte Carlo, como decisões de realocação baseadas em performance e drawdown afetam a evolução do patrimônio ao longo de décadas.
+Este projeto demonstra, via simulação numérica e Monte Carlo, como decisões de realocação baseadas em performance e drawdown afetam a evolução do patrimônio, incorporando o conceito de *behavior gap*.
 
 ## Como usar
 
@@ -20,28 +20,21 @@ Este projeto demonstra, via simulação numérica e Monte Carlo, como decisões 
    streamlit run streamlit_app.py
    ```
 
-4. Acesse o link (`localhost:8501` por padrão).
+4. Na sidebar, defina:
+   - Capital Inicial  
+   - Horizonte (anos)  
+   - Retorno Esperado (Constant % a.a.)  
+   - Retorno Esperado (Volátil % a.a.)  
+   - Volatilidade (% a.a.)  
+   - Drawdown (% mensais)  
+   - Simulações (Monte Carlo)
 
-## Lógica de Alocação
-
-- **Inicial**: 50% constante / 50% volátil  
-- **Up-switch 1**: +400 bps de outperformance da parte volátil → 40% constante / 60% volátil  
-- **Up-switch 2**: +200 bps adicionais → 30% constante / 70% volátil  
-- **Down-switch 1**: drawdown da parte volátil ≥ threshold → 80% constante / 20% volátil  
-- **Down-switch 2**: segundo drawdown antes de up-switch → 90% constante / 10% volátil  
-- **Down-switch 3**: terceiro drawdown → 100% constante  
-
-## Inputs na sidebar
-
-- Capital Inicial  
-- Horizonte (anos)  
-- Retorno Constante (% a.a.)  
-- Retorno Volátil (% a.a.)  
-- Volatilidade Volátil (% a.a.)  
-- Drawdown (% para pânico)  
-- Simulações (Monte Carlo)
+5. A aplicação mostra:
+   - **Retorno Esperado** das partes constante e volátil.  
+   - Mediana e banda 10%-90% do valor do portfólio.  
+   - **Behavior Gap**: diferença entre retorno anualizado mediano e retorno constante.
 
 ## Deploy
 
-Conecte ao repositório no Streamlit Cloud (https://share.streamlit.io).
+Conecte ao Streamlit Cloud: https://share.streamlit.io  
 

@@ -38,7 +38,6 @@ def simulate_behavioral_allocation(init_capital, const_ret, mu, sigma, years, dr
                 w_const, w_vol = 0.9, 0.1
             else:
                 w_const, w_vol = 1.0, 0.0
-            up_level = up_level  # no change
         # check up-switch only if no down-switch
         elif down_count == 0 and up_level < 2:
             perf_diff = cum_vol[t] - cum_const[t]
@@ -55,16 +54,20 @@ def simulate_behavioral_allocation(init_capital, const_ret, mu, sigma, years, dr
     return value
 
 # --- Interface Streamlit ---
-st.title("Portfolio Behavior Simulator with Allocation Triggers")
+st.title("Portfolio Behavior Simulator with Behavioral Allocation")
 
 # Sidebar inputs
 init_cap = st.sidebar.number_input("Capital Inicial", value=100_000)
 years = st.sidebar.slider("Horizonte (anos)", 5, 40, 30)
-const_ret = st.sidebar.number_input("Retorno Constante (% a.a.)", value=10.0) / 100
-mu = st.sidebar.number_input("Retorno Volátil (% a.a.)", value=10.0) / 100
-sigma = st.sidebar.number_input("Volatilidade Volátil (% a.a.)", value=15.0) / 100
+const_ret = st.sidebar.number_input("Retorno Esperado Constante (% a.a.)", value=10.0) / 100
+mu = st.sidebar.number_input("Retorno Esperado Volátil (% a.a.)", value=10.0) / 100
+sigma = st.sidebar.number_input("Volatilidade (% a.a.)", value=15.0) / 100
 drawdown_thresh = st.sidebar.slider("Drawdown para pânico (% mensais)", 1, 50, 5) / 100
 trials = st.sidebar.number_input("Simulações (Monte Carlo)", 1, 2000, 500)
+
+# Display expected returns
+st.write(f"**Retorno Esperado (Constante):** {const_ret:.2%} a.a.")
+st.write(f"**Retorno Esperado (Volátil):** {mu:.2%} a.a.")
 
 if st.sidebar.button("Simular"):
     periods = years * 12
@@ -92,4 +95,11 @@ if st.sidebar.button("Simular"):
     st.pyplot(fig)
 
     # valor final mediano
-    st.write(f"**Valor Final Mediano:** R$ {median_series[-1]:,.2f}")
+    val_final = median_series[-1]
+    st.write(f"**Valor Final Mediano:** R$ {val_final:,.2f}")
+
+    # Compute behavior gap: annualized median return vs constant
+    ann_median_ret = (val_final/init_cap)**(1/years) - 1
+    behavior_gap = ann_median_ret - const_ret
+    st.write(f"**Retorno Anualizado Mediano:** {ann_median_ret:.2%}")
+    st.write(f"**Behavior Gap (Mediano - Constante):** {behavior_gap:.2%}")
