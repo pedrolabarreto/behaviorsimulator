@@ -1,6 +1,6 @@
 # Portfolio Behavior Simulator
 
-Este projeto demonstra, via simulação numérica, como diferentes perfis de retorno (constante vs. volátil) e decisões comportamentais afetam a evolução do patrimônio ao longo de décadas.
+Este projeto demonstra, via simulação numérica, como diferentes perfis de retorno (constante vs. volátil) e decisões comportamentais afetam a evolução do patrimônio ao longo de décadas, incluindo análise de Monte Carlo.
 
 ## Como usar
 
@@ -22,6 +22,8 @@ Este projeto demonstra, via simulação numérica, como diferentes perfis de ret
 
 4. Acesse o link fornecido pelo Streamlit (`localhost:8501` por padrão).
 
+5. Na interface, ajuste **Simulações (Monte Carlo)** para mais de 1 para comparar distribuições de resultados.
+
 ## Deploy
 
 - Deploy no Streamlit Cloud:
@@ -31,10 +33,10 @@ Este projeto demonstra, via simulação numérica, como diferentes perfis de ret
 
 ## Estrutura de arquivos
 
-\`\`\`
+```
 portfolio_behavior_simulator/
 ├── README.md
 ├── streamlit_app.py
 ├── requirements.txt
 └── .gitignore
-\`\`\`
+```
