@@ -1,20 +1,19 @@
-# Behavior Gap App
+# Behavior Simulator
 
-Pequeno aplicativo Streamlit para demonstrar, de forma interativa, o impacto dos vieses comportamentais
-(pânico, FOMO, excesso de confiança) na construção de patrimônio de longo prazo.
+Aplicativo Streamlit que ilustra o *Behavior Gap* — a diferença de retorno entre
+o investimento buy‑and‑hold e o retorno real obtido pelos investidores quando
+deixam o comportamento guiar decisões (pânico, FOMO, overtrading).
 
-## Como rodar localmente
+## Executando localmente
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Ou simplesmente faça o deploy no **Streamlit Community Cloud** apontando para `app.py`.
-
-## Estrutura
+## Estrutura de pastas
 
 ```
 behaviorsimulator/
@@ -28,5 +27,4 @@ behaviorsimulator/
 ```
 
 ## Licença
-
 MIT
