@@ -3,92 +3,93 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# --- Funções de simulação ---
-def simulate_constant(init_capital, rate, years):
+# --- Função de simulação com triggers ---
+def simulate_behavioral_allocation(init_capital, const_ret, mu, sigma, years, drawdown_thresh):
     periods = years * 12
-    monthly_return = (1 + rate) ** (1/12) - 1
-    values = init_capital * (1 + monthly_return) ** np.arange(periods + 1)
-    return values
+    # monthly returns
+    r_const = (1 + const_ret) ** (1/12) - 1
+    r_vol = np.random.normal(mu/12, sigma/np.sqrt(12), size=periods)
+    # cumulative pure strategies
+    cum_const = np.ones(periods + 1)
+    cum_vol = np.ones(periods + 1)
+    # tracking
+    peak_vol = 1.0
+    up_level = 0
+    down_count = 0
+    # initial weights
+    w_const, w_vol = 0.5, 0.5
+    # portfolio value series
+    value = np.zeros(periods + 1)
+    value[0] = init_capital
 
-def simulate_random(init_capital, mu, sigma, years):
-    periods = years * 12
-    shocks = np.random.normal(mu/12, sigma/np.sqrt(12), size=periods)
-    values = [init_capital]
-    for r in shocks:
-        values.append(values[-1] * (1 + r))
-    return np.array(values)
+    for t in range(1, periods + 1):
+        # update pure cum returns
+        cum_const[t] = cum_const[t-1] * (1 + r_const)
+        cum_vol[t] = cum_vol[t-1] * (1 + r_vol[t-1])
+        # update peak for vol
+        peak_vol = max(peak_vol, cum_vol[t])
+        # check drawdown trigger
+        drawdown = (cum_vol[t] - peak_vol) / peak_vol
+        if drawdown <= -drawdown_thresh and down_count < 3:
+            down_count += 1
+            if down_count == 1:
+                w_const, w_vol = 0.8, 0.2
+            elif down_count == 2:
+                w_const, w_vol = 0.9, 0.1
+            else:
+                w_const, w_vol = 1.0, 0.0
+            up_level = up_level  # no change
+        # check up-switch only if no down-switch
+        elif down_count == 0 and up_level < 2:
+            perf_diff = cum_vol[t] - cum_const[t]
+            if up_level == 0 and perf_diff >= 0.04:
+                up_level = 1
+                w_const, w_vol = 0.4, 0.6
+            elif up_level == 1 and perf_diff >= 0.02:
+                up_level = 2
+                w_const, w_vol = 0.3, 0.7
+        # portfolio growth
+        portfolio_ret = w_const * (1 + r_const) + w_vol * (1 + r_vol[t-1])
+        value[t] = value[t-1] * portfolio_ret
 
-def simulate_behavioral(init_capital, mu, sigma, years, panic_drawdown):
-    volatile = simulate_random(init_capital, mu, sigma, years)
-    periods = years * 12
-    for i in range(1, len(volatile)):
-        peak = volatile[:i+1].max()
-        drawdown = (volatile[i] - peak) / peak
-        if drawdown <= -panic_drawdown:
-            remaining_months = periods - i
-            monthly_return = (1 + mu * 0.5) ** (1/12) - 1
-            cons = volatile[i] * (1 + monthly_return) ** np.arange(remaining_months + 1)
-            return np.concatenate([volatile[:i+1], cons[1:]])
-    return volatile
+    return value
 
 # --- Interface Streamlit ---
-st.title("Portfolio Behavior Simulator")
+st.title("Portfolio Behavior Simulator with Allocation Triggers")
 
-st.sidebar.header("Parâmetros")
+# Sidebar inputs
 init_cap = st.sidebar.number_input("Capital Inicial", value=100_000)
-years = st.sidebar.slider("Horizonte (anos)", min_value=5, max_value=40, value=30)
-strategy = st.sidebar.selectbox("Estratégia", ("Constante", "Volátil", "Comportamental"))
-
-if strategy == "Constante":
-    rate = st.sidebar.number_input("Retorno anual (%)", value=6.0) / 100
-else:
-    mu = st.sidebar.number_input("Retorno anual médio (%)", value=8.0) / 100
-    sigma = st.sidebar.number_input("Volatilidade anual (%)", value=15.0) / 100
-    if strategy == "Comportamental":
-        panic = st.sidebar.slider("Limite de drawdown (%) para pânico", min_value=5, max_value=50, value=20) / 100
-
-trials = st.sidebar.number_input("Simulações (Monte Carlo)", min_value=1, max_value=5000, value=1)
+years = st.sidebar.slider("Horizonte (anos)", 5, 40, 30)
+const_ret = st.sidebar.number_input("Retorno Constante (% a.a.)", value=10.0) / 100
+mu = st.sidebar.number_input("Retorno Volátil (% a.a.)", value=10.0) / 100
+sigma = st.sidebar.number_input("Volatilidade Volátil (% a.a.)", value=15.0) / 100
+drawdown_thresh = st.sidebar.slider("Drawdown para pânico (% mensais)", 1, 50, 5) / 100
+trials = st.sidebar.number_input("Simulações (Monte Carlo)", 1, 2000, 500)
 
 if st.sidebar.button("Simular"):
-    if trials == 1:
-        # Simulação única
-        if strategy == "Constante":
-            series = simulate_constant(init_cap, rate, years)
-        elif strategy == "Volátil":
-            series = simulate_random(init_cap, mu, sigma, years)
-        else:
-            series = simulate_behavioral(init_cap, mu, sigma, years, panic)
-        df = pd.DataFrame({"Patrimônio": series})
-        df.index = pd.date_range(start="2025-01-01", periods=len(df), freq="M")
-        st.line_chart(df)
-        st.write(f"**Valor Final:** R$ {df.Patrimônio.iloc[-1]:,.2f}")
-        max_dd = (df.Patrimônio.cummax() - df.Patrimônio).max() / df.Patrimônio.cummax().max()
-        st.write(f"**Máxima Queda (drawdown):** {max_dd:.2%}")
-    else:
-        # Monte Carlo
-        results = {"Constante": [], "Volátil": [], "Comportamental": []}
-        for _ in range(trials):
-            results["Constante"].append(simulate_constant(init_cap, rate, years)[-1])
-            results["Volátil"].append(simulate_random(init_cap, mu, sigma, years)[-1])
-            results["Comportamental"].append(simulate_behavioral(init_cap, mu, sigma, years, panic)[-1])
-        # Estatísticas
-        stats = {}
-        for key, vals in results.items():
-            arr = np.array(vals)
-            stats[key] = {
-                "Média": np.mean(arr),
-                "Mediana": np.median(arr),
-                "10º Percentil": np.percentile(arr, 10),
-                "90º Percentil": np.percentile(arr, 90)
-            }
-        stats_df = pd.DataFrame(stats).T
-        stats_df = stats_df.applymap(lambda x: f"R$ {x:,.2f}")
-        st.write("### Estatísticas (Valor Final em cada simulação)")
-        st.table(stats_df)
+    periods = years * 12
+    all_values = np.zeros((trials, periods + 1))
 
-        # Boxplot comparativo
-        fig, ax = plt.subplots()
-        ax.boxplot([results["Constante"], results["Volátil"], results["Comportamental"]],
-                   labels=["Constante", "Volátil", "Comportamental"])
-        ax.set_title("Distribuição do Valor Final - Estratégias")
-        st.pyplot(fig)
+    for i in range(trials):
+        all_values[i] = simulate_behavioral_allocation(
+            init_cap, const_ret, mu, sigma, years, drawdown_thresh
+        )
+
+    # estatísticas por mês
+    median_series = np.median(all_values, axis=0)
+    p10 = np.percentile(all_values, 10, axis=0)
+    p90 = np.percentile(all_values, 90, axis=0)
+    dates = pd.date_range(start="2025-01-01", periods=periods + 1, freq="M")
+
+    # Plot com matplotlib
+    fig, ax = plt.subplots()
+    ax.plot(dates, median_series, label="Mediana")
+    ax.fill_between(dates, p10, p90, alpha=0.3, label="10%-90%")
+    ax.set_title("Evolução do Portfólio (Mediana + Faixa 10%-90%)")
+    ax.legend()
+    ax.set_xlabel("Data")
+    ax.set_ylabel("Valor do Portfólio")
+    st.pyplot(fig)
+
+    # valor final mediano
+    st.write(f"**Valor Final Mediano:** R$ {median_series[-1]:,.2f}")
